@@ -1,6 +1,6 @@
 Avatar Exporter
 ===========
-Copyright 2018 High Fidelity, Inc.
+Copyright 2018 High Fidelity, Inc.   
 Copyright 2022 Overte e.V.
 
 Note: It is recommended to use Unity version 2019.4.31f1 for this Avatar Exporter.
