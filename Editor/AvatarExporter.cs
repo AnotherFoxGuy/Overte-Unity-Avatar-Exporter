@@ -30,7 +30,7 @@ class AvatarExporter : MonoBehaviour
     static readonly string EMPTY_WARNING_TEXT = "None";
     static readonly string TEXTURES_DIRECTORY = "textures";
     static readonly string DEFAULT_MATERIAL_NAME = "No Name";
-    static readonly string HEIGHT_REFERENCE_PREFAB = "Assets/Editor/AvatarExporter/HeightReference.prefab";
+    static readonly string HEIGHT_REFERENCE_PREFAB_GUID = "60f00688eb8a9dd55b72d8a31d283a6b";
     static readonly Vector3 PREVIEW_CAMERA_PIVOT = new Vector3(0.0f, 1.755f, 0.0f);
     static readonly Vector3 PREVIEW_CAMERA_DIRECTION = new Vector3(0.0f, 0.0f, -1.0f);
 
@@ -276,10 +276,8 @@ class AvatarExporter : MonoBehaviour
     /*[MenuItem("Overte/Test")]
     static void Test()
     {
-        var f = new FST();
-        f.LoadFile(@"E:\TMP2\test\avatar.fst");
-        Debug.Log(f.remapBlendShapeList[1]);
-        f.ExportFile(@"E:\TMP2\test\avatar2.fst");
+        var heightReferencePath = AssetDatabase.GUIDToAssetPath(HEIGHT_REFERENCE_PREFAB_GUID);
+        Debug.Log(heightReferencePath);
     }*/
 
     static void ExportSelectedAvatar(bool updateExistingAvatar)
@@ -1378,7 +1376,8 @@ class AvatarExporter : MonoBehaviour
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
 
         // instantiate a game object to preview the avatar and a game object for the height reference prefab at 0, 0, 0
-        UnityEngine.Object heightReferenceResource = AssetDatabase.LoadAssetAtPath(HEIGHT_REFERENCE_PREFAB, typeof(UnityEngine.Object));
+        var heightReferencePath = AssetDatabase.GUIDToAssetPath(HEIGHT_REFERENCE_PREFAB_GUID);
+        UnityEngine.Object heightReferenceResource = AssetDatabase.LoadAssetAtPath(heightReferencePath, typeof(UnityEngine.Object));
         avatarPreviewObject = (GameObject)Instantiate(avatarResource, Vector3.zero, Quaternion.identity);
         heightReferenceObject = (GameObject)Instantiate(heightReferenceResource, Vector3.zero, Quaternion.identity);
 
