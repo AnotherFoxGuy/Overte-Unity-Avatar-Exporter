@@ -1,14 +1,11 @@
 {
-    "name": "org.overte.avatar-exporter.Editor",
+    "name": "org.overte.avatar-exporter",
     "rootNamespace": "",
     "references": [
-        "org.overte.avatar-exporter",
-        "UnityGLTFScripts",
-        "UnityGLTFEditor"
+        "glTFast",
+        "glTFast.Export"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

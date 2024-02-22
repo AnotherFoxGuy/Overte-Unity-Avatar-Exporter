@@ -13,10 +13,11 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using System.Globalization;
+using static Overte.Exporter.Avatar.Constants;
 
-namespace Overte
+namespace Overte.Exporter.Avatar
 {
-    class JointMap
+    public class JointMap
     {
         public string From;
         public string To;
@@ -38,7 +39,7 @@ namespace Overte
         public override string ToString() => $"jointMap = {From} = {To}";
     }
     
-    class Joint
+    public class Joint
     {
         public string From;
         public string To;
@@ -60,7 +61,7 @@ namespace Overte
         public override string ToString() => $"joint = {From} = {To}";
     }
 
-    class JointRotationOffset2
+    public class JointRotationOffset2
     {
         public string BoneName;
         public Quaternion offset;
@@ -89,7 +90,7 @@ namespace Overte
         public override string ToString() => $"jointRotationOffset2 = {BoneName} = ({offset.x.F()}, {offset.y.F()}, {offset.z.F()}, {offset.w.F()})";
     }
 
-    class RemapBlendShape
+    public class RemapBlendShape
     {
         public string From;
         public string To;
@@ -108,7 +109,7 @@ namespace Overte
         public override string ToString() => $"bs = {From} = {To} = {Multiplier.F()}";
     }
 
-    class JointIndex
+    public class JointIndex
     {
         public string BoneName;
         public int Index;
@@ -125,14 +126,14 @@ namespace Overte
         public override string ToString() => $"jointIndex = {BoneName} = {Index}";
     }
 
-    class FST
+    public class FST
     {
-        public readonly string exporterVersion = AvatarExporter.AVATAR_EXPORTER_VERSION;
+        public readonly string exporterVersion = EXPORTER_VERSION;
         public string name;
         public string type = "body+head";
         public float scale = 1.0f;
         public string filename;
-        public string texdir = "textures";
+        public string texdir;
         public string materialMap;
         public string script;
 
@@ -163,8 +164,8 @@ namespace Overte
                 $"type     = {type}",
                 $"scale    = {scale.F()}",
                 $"filename = {filename}",
-                $"texdir   = {texdir}"
             };
+            AddIfNotNull(nameof(texdir), texdir);
             AddIfNotNull(remapBlendShapeList);
             AddIfNotNull(jointMapList);
             AddIfNotNull(jointIndexList);
@@ -298,7 +299,7 @@ namespace Overte
         }
     }
 
-    class UserBoneInformation
+    public class UserBoneInformation
     {
         public string humanName; // bone name in Humanoid if it is mapped, otherwise ""
         public string parentName; // parent user bone name
@@ -329,7 +330,7 @@ namespace Overte
         public bool HasHumanMapping() { return !string.IsNullOrEmpty(humanName); }
     }
 
-    class BoneTreeNode
+    public class BoneTreeNode
     {
         public string boneName;
         public string parentName;
@@ -343,7 +344,7 @@ namespace Overte
         }
     }
 
-    class MaterialData
+    public class MaterialData
     {
         public Color albedo;
         public string albedoMap;

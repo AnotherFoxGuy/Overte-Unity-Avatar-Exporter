@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/overte-unity-avatar-exporter/Editor/Window/OverteExporterWindow.uss?fileID=7433441132597879392&amp;guid=1799e8bdd425fa546847f0241259a7ad&amp;type=3#OverteExporterWindow" />
+    <ui:Label tabindex="-1" text="Overte Avatar Exporter" display-tooltip-when-elided="true" style="-unity-font-style: bold; -unity-text-align: upper-center;" />
+    <ui:DropdownField label="Avatar" index="-1" name="avatar_list" binding-path="m_avatarList" />
+    <ui:TextField picking-mode="Ignore" label="Folder" name="folder_box" focusable="false" readonly="true" />
+    <ui:Slider label="Scale" value="10" high-value="200" name="scale_slider" />
+    <ui:VisualElement style="flex-grow: 1;" />
+    <ui:Button text="Export Avatar" display-tooltip-when-elided="true" name="export_button" style="-unity-text-align: middle-center;" />
+</ui:UXML>
