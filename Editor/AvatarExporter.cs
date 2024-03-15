@@ -32,7 +32,7 @@ namespace Overte.Exporter.Avatar
 
         GLTFSettings _gLTFSettings = new GLTFSettings
         {
-            ExportDisabledGameObjects = false
+            ExportDisabledGameObjects = false,
         };
 
         private HumanDescription humanDescription;
@@ -80,8 +80,12 @@ namespace Overte.Exporter.Avatar
 
         void ExportGltf(string ExportPath, string fileName)
         {
+            var tr = _avatar.transform.position;
+            _avatar.transform.position = Vector3.zero;
             var exporter = new GLTFSceneExporter(_avatar.transform, new ExportContext(_gLTFSettings));
-            exporter.SaveGLTFandBin(ExportPath, fileName);
+            // exporter.SaveGLTFandBin(ExportPath, fileName);
+            exporter.SaveGLB(ExportPath, fileName);
+            _avatar.transform.position = tr;
         }
 
         // The Overte FBX Serializer omits the colon based prefixes. This will make the jointnames compatible.
@@ -91,7 +95,7 @@ namespace Overte.Exporter.Avatar
         {
             var fst = new FST();
             fst.name = _avatar.name;
-            fst.filename = $"{_avatar.name}.gltf";
+            fst.filename = $"{_avatar.name}.glb";
 
             // write out joint mappings to fst file
             foreach (var userBoneInfo in userBoneInfos)
