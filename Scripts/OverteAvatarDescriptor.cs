@@ -19,7 +19,6 @@ namespace Overte.Exporter.Avatar
             public string from;
             public string to;
             public float multiplier;
-            public OvBlendshapes test;
         }
 
         public enum OvBlendshapes

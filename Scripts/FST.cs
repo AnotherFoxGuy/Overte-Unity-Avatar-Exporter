@@ -114,6 +114,13 @@ namespace Overte.Exporter.Avatar
             Multiplier = float.Parse(parsed.Groups["Multiplier"].Value, CultureInfo.InvariantCulture);
         }
 
+        public RemapBlendShape(string from, string to, float multiplier)
+        {
+            From = from;
+            To = to;
+            Multiplier = multiplier;
+        }
+
         public override string ToString() => $"bs = {From} = {To} = {Multiplier.F()}";
     }
 

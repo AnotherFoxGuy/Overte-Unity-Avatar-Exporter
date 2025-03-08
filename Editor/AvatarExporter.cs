@@ -95,6 +95,8 @@ namespace Overte.Exporter.Avatar
 
         private bool WriteFst(string exportFstPath)
         {
+            var avatarDescriptor = _avatar.GetComponent<OverteAvatarDescriptor>();
+            
             var fst = new FST();
             fst.name = _avatar.name;
             fst.filename = $"{_avatar.name}.glb";
@@ -160,6 +162,11 @@ namespace Overte.Exporter.Avatar
                 else
                     fst.jointRotationList.Find(x => x.BoneName == norBName).offset =
                         new Quaternion(-jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w);
+            }
+
+            foreach (var blendshape in avatarDescriptor.RemapedBlendShapeList)
+            {
+                fst.remapBlendShapeList.Add(new RemapBlendShape(blendshape.from, blendshape.to, blendshape.multiplier));
             }
 
             var res = fst.ExportFile(exportFstPath);
