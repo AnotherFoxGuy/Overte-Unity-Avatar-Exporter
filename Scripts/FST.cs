@@ -22,7 +22,8 @@ namespace Overte.Exporter.Avatar
         public string From;
         public string To;
 
-        private Regex parseRx = new Regex(@"^(?<From>[\w]*)\s*=\s*(?<To>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex parseRx = new Regex(@"^(?<From>[\w]*)\s*=\s*(?<To>.*)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public JointMap(string RawInput)
         {
@@ -33,18 +34,20 @@ namespace Overte.Exporter.Avatar
 
         public JointMap(string f, string t)
         {
-            From = f; To = t;
+            From = f;
+            To = t;
         }
 
         public override string ToString() => $"jointMap = {From} = {To}";
     }
-    
+
     public class Joint
     {
         public string From;
         public string To;
 
-        private Regex parseRx = new Regex(@"^(?<From>[\w]*)\s*=\s*(?<To>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex parseRx = new Regex(@"^(?<From>[\w]*)\s*=\s*(?<To>.*)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public Joint(string RawInput)
         {
@@ -55,7 +58,8 @@ namespace Overte.Exporter.Avatar
 
         public Joint(string f, string t)
         {
-            From = f; To = t;
+            From = f;
+            To = t;
         }
 
         public override string ToString() => $"joint = {From} = {To}";
@@ -66,7 +70,9 @@ namespace Overte.Exporter.Avatar
         public string BoneName;
         public Quaternion offset;
 
-        private Regex parseRx = new Regex(@"(?<BoneName>.*)\s*=\s*\(\s*(?<X>.*)\s*,\s*(?<Y>.*)\s*,\s*(?<Z>.*)\s*,\s*(?<W>.*)\s*\)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex parseRx =
+            new Regex(@"(?<BoneName>.*)\s*=\s*\(\s*(?<X>.*)\s*,\s*(?<Y>.*)\s*,\s*(?<Z>.*)\s*,\s*(?<W>.*)\s*\)",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public JointRotationOffset2(string value)
         {
@@ -87,16 +93,18 @@ namespace Overte.Exporter.Avatar
             offset = new Quaternion(x, y, z, w);
         }
 
-        public override string ToString() => $"jointRotationOffset2 = {BoneName} = ({offset.x.F()}, {offset.y.F()}, {offset.z.F()}, {offset.w.F()})";
+        public override string ToString() =>
+            $"jointRotationOffset2 = {BoneName} = ({offset.x.F()}, {offset.y.F()}, {offset.z.F()}, {offset.w.F()})";
     }
-
+    
     public class RemapBlendShape
     {
         public string From;
         public string To;
         public float Multiplier;
 
-        private Regex parseRx = new Regex(@"(?<From>.*)\s*=\s*(?<To>.*)\s*=\s*(?<Multiplier>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex parseRx = new Regex(@"(?<From>.*)\s*=\s*(?<To>.*)\s*=\s*(?<Multiplier>.*)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public RemapBlendShape(string rawData)
         {
@@ -114,7 +122,8 @@ namespace Overte.Exporter.Avatar
         public string BoneName;
         public int Index;
 
-        private Regex parseRx = new Regex(@"^(?<BoneName>.*)\s*=\s*(?<Index>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex parseRx = new Regex(@"^(?<BoneName>.*)\s*=\s*(?<Index>.*)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public JointIndex(string rawData)
         {
@@ -122,7 +131,7 @@ namespace Overte.Exporter.Avatar
             BoneName = parsed.Groups["BoneName"].Value.Trim();
             Index = int.Parse(parsed.Groups["Index"].Value);
         }
-        
+
         public override string ToString() => $"jointIndex = {BoneName} = {Index}";
     }
 
@@ -145,7 +154,8 @@ namespace Overte.Exporter.Avatar
         public List<JointIndex> jointIndexList = new List<JointIndex>();
         public List<string> freeJointList = new List<string>();
 
-        private Regex parseRx = new Regex(@"^(?<Key>[\w]*)\s*=\s*(?<Value>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex parseRx = new Regex(@"^(?<Key>[\w]*)\s*=\s*(?<Value>.*)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public string flowPhysicsData;
         public string flowCollisionsData;
@@ -187,7 +197,7 @@ namespace Overte.Exporter.Avatar
             catch (Exception e)
             {
                 EditorUtility.DisplayDialog("Error", "Failed to write file " + fstPath +
-                                            ". Please check the location and try again.", "Ok");
+                                                     ". Please check the location and try again.", "Ok");
                 Debug.LogException(e);
                 return false;
             }
@@ -230,7 +240,7 @@ namespace Overte.Exporter.Avatar
             catch (Exception e)
             {
                 EditorUtility.DisplayDialog("Error", "Failed to read file " + fstPath +
-                                            ". Please check the location and try again.", "Ok");
+                                                     ". Please check the location and try again.", "Ok");
                 Debug.LogException(e);
                 return false;
             }
@@ -295,7 +305,8 @@ namespace Overte.Exporter.Avatar
         private KeyValuePair<string, string> ParseKVPair(Regex rx, string sinput)
         {
             var match = rx.Matches(sinput)[0];
-            return new KeyValuePair<string, string>(match.Groups["Key"].Value.Trim(), match.Groups["Value"].Value.Trim());
+            return new KeyValuePair<string, string>(match.Groups["Key"].Value.Trim(),
+                match.Groups["Value"].Value.Trim());
         }
     }
 
@@ -317,6 +328,7 @@ namespace Overte.Exporter.Avatar
             position = new Vector3();
             rotation = new Quaternion();
         }
+
         public UserBoneInformation(string parent, BoneTreeNode treeNode, Vector3 pos)
         {
             humanName = "";
@@ -327,7 +339,10 @@ namespace Overte.Exporter.Avatar
             rotation = new Quaternion();
         }
 
-        public bool HasHumanMapping() { return !string.IsNullOrEmpty(humanName); }
+        public bool HasHumanMapping()
+        {
+            return !string.IsNullOrEmpty(humanName);
+        }
     }
 
     public class BoneTreeNode
@@ -336,7 +351,10 @@ namespace Overte.Exporter.Avatar
         public string parentName;
         public List<BoneTreeNode> children = new List<BoneTreeNode>();
 
-        public BoneTreeNode() { }
+        public BoneTreeNode()
+        {
+        }
+
         public BoneTreeNode(string name, string parent)
         {
             boneName = name;

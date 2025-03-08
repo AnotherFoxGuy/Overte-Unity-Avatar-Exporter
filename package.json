@@ -3,7 +3,7 @@
   "version": "0.6.1",
   "displayName": "Overte Avatar Exporter for Unity",
   "description": "Overte Avatar Exporter for Unity",
-  "unity": "2019.4",
+  "unity": "2022.3",
   "license": "Apache 2.0",
   "author": "Edgar (Edgar@AnotherFoxGuy.com)",
   "documentationUrl": "https://docs.overte.org/create/avatars/find-avatars.html#overte-avatar-exporter-for-unity"
