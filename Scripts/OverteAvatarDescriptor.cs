@@ -10,7 +10,7 @@ namespace Overte.Exporter.Avatar
     {
         [SerializeField] public string AvatarName;
 
-        [SerializeField] private string m_exportPath;
+        // [SerializeField] private string m_exportPath;
 
         [SerializeField] public List<OvBlendshape> RemapedBlendShapeList = new();
         [Serializable]

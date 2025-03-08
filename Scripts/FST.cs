@@ -103,7 +103,7 @@ namespace Overte.Exporter.Avatar
         public string To;
         public float Multiplier;
 
-        private Regex parseRx = new Regex(@"(?<From>.*)\s*=\s*(?<To>.*)\s*=\s*(?<Multiplier>.*)",
+        private Regex parseRx = new Regex(@"(?<To>.*)\s*=\s*(?<From>.*)\s*=\s*(?<Multiplier>.*)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public RemapBlendShape(string rawData)
@@ -121,7 +121,7 @@ namespace Overte.Exporter.Avatar
             Multiplier = multiplier;
         }
 
-        public override string ToString() => $"bs = {From} = {To} = {Multiplier.F()}";
+        public override string ToString() => $"bs = {To} = {From} = {Multiplier.F()}";
     }
 
     public class JointIndex

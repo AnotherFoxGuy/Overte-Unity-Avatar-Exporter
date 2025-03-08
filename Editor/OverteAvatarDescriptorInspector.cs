@@ -10,7 +10,6 @@ namespace Overte.Exporter.Avatar.Editor
     public class OverteAvatarDescriptorEditor : UnityEditor.Editor
     {
         private SerializedProperty avatarNameProperty;
-        private SerializedProperty exportPathProperty;
         private SerializedProperty remapedBlendShapeListProperty;
 
         private bool showBlendshapeList = true;
@@ -20,9 +19,8 @@ namespace Overte.Exporter.Avatar.Editor
         private void OnEnable()
         {
             avatarNameProperty = serializedObject.FindProperty("AvatarName");
-            exportPathProperty = serializedObject.FindProperty("m_exportPath");
             remapedBlendShapeListProperty = serializedObject.FindProperty("RemapedBlendShapeList");
-            
+
             // Cache skinned mesh renderers
             RefreshSkinnedMeshRenderers();
         }
@@ -38,8 +36,7 @@ namespace Overte.Exporter.Avatar.Editor
             serializedObject.Update();
 
             EditorGUILayout.PropertyField(avatarNameProperty);
-            EditorGUILayout.PropertyField(exportPathProperty);
-            
+
             // Refresh button for skinned mesh renderers
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Skinned Mesh Renderers", EditorStyles.boldLabel);
@@ -47,45 +44,68 @@ namespace Overte.Exporter.Avatar.Editor
             {
                 RefreshSkinnedMeshRenderers();
             }
+
             EditorGUILayout.EndHorizontal();
-            
+
             if (skinnedMeshRenderers.Length == 0)
             {
-                EditorGUILayout.HelpBox("No SkinnedMeshRenderer components found in children. Add meshes to your avatar to map blendshapes.", MessageType.Warning);
+                EditorGUILayout.HelpBox(
+                    "No SkinnedMeshRenderer components found in children. Add meshes to your avatar to map blendshapes.",
+                    MessageType.Warning);
             }
             else
             {
-                EditorGUILayout.LabelField($"Found {skinnedMeshRenderers.Length} SkinnedMeshRenderer(s)", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField($"Found {skinnedMeshRenderers.Length} SkinnedMeshRenderer(s)",
+                    EditorStyles.miniLabel);
             }
-            
+
             // Custom GUI for the RemapedBlendShapeList
             DrawBlendShapeList();
 
             serializedObject.ApplyModifiedProperties();
+            
+            if (GUILayout.Button("Export avatar"))
+            {
+                ExportAvatar();
+            }
+        }
+
+        private void ExportAvatar()
+        {
+            var path = EditorUtility.SaveFilePanel("Select .fst", "", avatarNameProperty.stringValue, "fst");
+            if (path == "")
+                return;
+
+            var av = (OverteAvatarDescriptor)target;
+            Debug.Log(path);
+            var avex = new AvatarExporter(avatarNameProperty.stringValue, av.gameObject);
+            avex.ExportAvatar(path);
         }
 
         private void DrawBlendShapeList()
         {
             EditorGUILayout.Space();
-            
+
             // Header with foldout and buttons
             EditorGUILayout.BeginHorizontal();
-            showBlendshapeList = EditorGUILayout.Foldout(showBlendshapeList, "Blend Shape Remapping", true, EditorStyles.foldoutHeader);
-            
+            showBlendshapeList = EditorGUILayout.Foldout(showBlendshapeList, "Blend Shape Remapping", true,
+                EditorStyles.foldoutHeader);
+
             GUILayout.FlexibleSpace();
-            
+
             if (GUILayout.Button("Add Mapping", GUILayout.Width(100)))
             {
                 AddNewBlendshapeMapping();
             }
-            
+
             EditorGUILayout.EndHorizontal();
 
             if (!showBlendshapeList)
                 return;
 
             // Scrollable area for blend shape mappings
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(Mathf.Min(remapedBlendShapeListProperty.arraySize * 120f, 300f)));
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition,
+                GUILayout.Height(Mathf.Min(remapedBlendShapeListProperty.arraySize * 120f, 300f)));
 
             for (var i = 0; i < remapedBlendShapeListProperty.arraySize; i++)
             {
@@ -103,13 +123,13 @@ namespace Overte.Exporter.Avatar.Editor
             var multiplierProperty = blendshapeElement.FindPropertyRelative("multiplier");
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            
+
             // Heading with delete button
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField($"Mapping {index + 1}", EditorStyles.boldLabel);
-            
+
             GUILayout.FlexibleSpace();
-            
+
             if (GUILayout.Button("×", GUILayout.Width(20), GUILayout.Height(20)))
             {
                 RemoveBlendshapeMapping(index);
@@ -117,31 +137,33 @@ namespace Overte.Exporter.Avatar.Editor
                 EditorGUILayout.EndVertical();
                 return;
             }
-            
+
             EditorGUILayout.EndHorizontal();
 
             // From field with blendshape selector
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PropertyField(fromProperty, new GUIContent("From Blendshape"));
-            
+
             if (GUILayout.Button("Select", GUILayout.Width(60)))
             {
                 BlendshapeSelectorWindow.ShowWindow(skinnedMeshRenderers, fromProperty, serializedObject);
             }
+
             EditorGUILayout.EndHorizontal();
-            
+
             // To field with enum selector
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PropertyField(toProperty, new GUIContent("To Overte Shape"));
-            
+
             if (GUILayout.Button("Select", GUILayout.Width(60)))
             {
                 OverteBLendshapeSelectorWindow.ShowWindow(toProperty, serializedObject);
             }
+
             EditorGUILayout.EndHorizontal();
-            
+
             EditorGUILayout.Slider(multiplierProperty, 0f, 2f, new GUIContent("Multiplier"));
-            
+
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(4);
         }
@@ -150,12 +172,12 @@ namespace Overte.Exporter.Avatar.Editor
         {
             var index = remapedBlendShapeListProperty.arraySize;
             remapedBlendShapeListProperty.arraySize++;
-            
+
             var newElement = remapedBlendShapeListProperty.GetArrayElementAtIndex(index);
             newElement.FindPropertyRelative("from").stringValue = "";
             newElement.FindPropertyRelative("to").stringValue = "";
             newElement.FindPropertyRelative("multiplier").floatValue = 1.0f;
-            
+
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -172,20 +194,21 @@ namespace Overte.Exporter.Avatar.Editor
         private SkinnedMeshRenderer[] skinnedMeshRenderers;
         private SerializedProperty targetProperty;
         private SerializedObject serializedObject;
-        
+
         private Vector2 scrollPosition;
         private string searchText = "";
         private Dictionary<string, bool> foldoutStates = new Dictionary<string, bool>();
-        
-        public static void ShowWindow(SkinnedMeshRenderer[] renderers, SerializedProperty property, SerializedObject serializedObj)
+
+        public static void ShowWindow(SkinnedMeshRenderer[] renderers, SerializedProperty property,
+            SerializedObject serializedObj)
         {
             if (renderers == null || renderers.Length == 0)
             {
-                EditorUtility.DisplayDialog("No Skinned Mesh Renderers", 
+                EditorUtility.DisplayDialog("No Skinned Mesh Renderers",
                     "No SkinnedMeshRenderer components found in the avatar hierarchy.", "OK");
                 return;
             }
-            
+
             var window = GetWindow<BlendshapeSelectorWindow>(true, "Blendshape Selector");
             window.minSize = new Vector2(350, 400);
             window.maxSize = new Vector2(500, 600);
@@ -200,7 +223,7 @@ namespace Overte.Exporter.Avatar.Editor
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("Select a Blendshape", EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
-            
+
             // Search bar
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Search:", GUILayout.Width(50));
@@ -220,127 +243,124 @@ namespace Overte.Exporter.Avatar.Editor
                     }
                 }
             }
+
             if (GUILayout.Button("Clear", GUILayout.Width(60)))
             {
                 searchText = "";
             }
+
             EditorGUILayout.EndHorizontal();
-            
+
             EditorGUILayout.Space(10);
-            
+
             // Blendshape list
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-            
+
             var anyBlendshapesFound = false;
-            
+
             foreach (var renderer in skinnedMeshRenderers)
             {
                 if (renderer == null || renderer.sharedMesh == null) continue;
-                
+
                 var rendererName = string.IsNullOrEmpty(renderer.name) ? "Unnamed Mesh" : renderer.name;
-                
+
                 // Skip renderers with no blendshapes
                 if (renderer.sharedMesh.blendShapeCount == 0) continue;
-                
+
                 // Filter renderers by search text
                 var matchingBlendshapeIndices = new List<int>();
                 for (var i = 0; i < renderer.sharedMesh.blendShapeCount; i++)
                 {
                     var blendshapeName = renderer.sharedMesh.GetBlendShapeName(i);
-                    if (string.IsNullOrEmpty(searchText) || 
+                    if (string.IsNullOrEmpty(searchText) ||
                         blendshapeName.ToLower().Contains(searchText.ToLower()) ||
                         rendererName.ToLower().Contains(searchText.ToLower()))
                     {
                         matchingBlendshapeIndices.Add(i);
                     }
                 }
-                
+
                 if (matchingBlendshapeIndices.Count == 0) continue;
-                
+
                 anyBlendshapesFound = true;
-                
+
                 // Initialize foldout state if not exists
                 if (!foldoutStates.ContainsKey(rendererName))
                 {
                     foldoutStates[rendererName] = false;
                 }
-                
+
                 // Renderer foldout
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                
+
                 // Renderer header with count
                 EditorGUILayout.BeginHorizontal();
                 foldoutStates[rendererName] = EditorGUILayout.Foldout(
-                    foldoutStates[rendererName], 
-                    $"{rendererName} ({matchingBlendshapeIndices.Count} blendshapes)", 
+                    foldoutStates[rendererName],
+                    $"{rendererName} ({matchingBlendshapeIndices.Count} blendshapes)",
                     true
                 );
-                
-                // Preview button to expand all blendshapes for this renderer
-                if (GUILayout.Button("Preview All", GUILayout.Width(80)))
-                {
-                    foldoutStates[rendererName] = true;
-                }
+
                 EditorGUILayout.EndHorizontal();
-                
+
                 // List blendshapes if foldout is open
                 if (foldoutStates[rendererName])
                 {
                     EditorGUI.indentLevel++;
-                    
+
                     foreach (var i in matchingBlendshapeIndices)
                     {
                         var blendshapeName = renderer.sharedMesh.GetBlendShapeName(i);
-                        
+
                         EditorGUILayout.BeginHorizontal();
-                        
+
                         // Highlight search matches
                         var style = new GUIStyle(EditorStyles.label);
-                        if (!string.IsNullOrEmpty(searchText) && 
+                        if (!string.IsNullOrEmpty(searchText) &&
                             blendshapeName.ToLower().Contains(searchText.ToLower()))
                         {
                             style.fontStyle = FontStyle.Bold;
                         }
-                        
+
                         EditorGUILayout.LabelField(blendshapeName, style);
-                        
+
                         if (GUILayout.Button("Select", GUILayout.Width(60)))
                         {
                             SelectBlendshape(blendshapeName);
                             GUIUtility.ExitGUI(); // Close window after selection
                         }
-                        
+
                         EditorGUILayout.EndHorizontal();
                     }
-                    
+
                     EditorGUI.indentLevel--;
                 }
-                
+
                 EditorGUILayout.EndVertical();
                 EditorGUILayout.Space(5);
             }
-            
+
             if (!anyBlendshapesFound)
             {
                 EditorGUILayout.HelpBox(
-                    string.IsNullOrEmpty(searchText) ? 
-                        "No blendshapes found in any SkinnedMeshRenderer." : 
-                        $"No blendshapes matching '{searchText}' found.", 
+                    string.IsNullOrEmpty(searchText)
+                        ? "No blendshapes found in any SkinnedMeshRenderer."
+                        : $"No blendshapes matching '{searchText}' found.",
                     MessageType.Info
                 );
             }
-            
+
             EditorGUILayout.EndScrollView();
-            
+
             EditorGUILayout.Space(10);
-            
+
             // Cancel button at bottom
             if (GUILayout.Button("Cancel", GUILayout.Height(30)))
             {
                 Close();
             }
         }
-        
+
         private void SelectBlendshape(string blendshapeName)
         {
             targetProperty.stringValue = blendshapeName;
@@ -348,17 +368,17 @@ namespace Overte.Exporter.Avatar.Editor
             Close();
         }
     }
-    
+
     // Popup window for selecting Overte blendshape enum values
     public class OverteBLendshapeSelectorWindow : EditorWindow
     {
         private SerializedProperty targetProperty;
         private SerializedObject serializedObject;
-        
+
         private Vector2 scrollPosition;
         private string searchText = "";
         private string[] enumNames;
-        
+
         public static void ShowWindow(SerializedProperty property, SerializedObject serializedObj)
         {
             var window = GetWindow<OverteBLendshapeSelectorWindow>(true, "Overte Blendshape Selector");
@@ -369,13 +389,13 @@ namespace Overte.Exporter.Avatar.Editor
             window.enumNames = System.Enum.GetNames(typeof(OverteAvatarDescriptor.OvBlendshapes));
             window.ShowUtility();
         }
-        
+
         private void OnGUI()
         {
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("Select Overte Blendshape", EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
-            
+
             // Search bar
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Search:", GUILayout.Width(50));
@@ -384,18 +404,21 @@ namespace Overte.Exporter.Avatar.Editor
             {
                 searchText = newSearch;
             }
+
             if (GUILayout.Button("Clear", GUILayout.Width(60)))
             {
                 searchText = "";
             }
+
             EditorGUILayout.EndHorizontal();
-            
+
             EditorGUILayout.Space(10);
-            
+
             // Group blendshapes by category
             var groupedBlendshapes = new Dictionary<string, List<string>>();
-            
+
             // Define groups based on enum naming patterns
+            groupedBlendshapes["Basic"] = new List<string> { "EyeBlink_L", "EyeBlink_R", "JawOpen" };
             groupedBlendshapes["Eye"] = new List<string>();
             groupedBlendshapes["Brows"] = new List<string>();
             groupedBlendshapes["Jaw"] = new List<string>();
@@ -406,7 +429,7 @@ namespace Overte.Exporter.Avatar.Editor
             groupedBlendshapes["Tongue"] = new List<string>();
             groupedBlendshapes["User"] = new List<string>();
             groupedBlendshapes["Other"] = new List<string>();
-            
+
             // Populate groups
             foreach (var enumName in enumNames)
             {
@@ -420,87 +443,87 @@ namespace Overte.Exporter.Avatar.Editor
                         break;
                     }
                 }
-                
+
                 // Add to User group for UserBlendshape items
                 if (!added && enumName.StartsWith("UserBlendshape"))
                 {
                     groupedBlendshapes["User"].Add(enumName);
                     added = true;
                 }
-                
+
                 // Add to Other if no match was found
                 if (!added)
                 {
                     groupedBlendshapes["Other"].Add(enumName);
                 }
             }
-            
+
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-            
+
             var anyFound = false;
-            
+
             // Display grouped blendshapes
             foreach (var group in groupedBlendshapes)
             {
                 // Filter by search text
-                var matchingItems = group.Value.Where(item => 
-                    string.IsNullOrEmpty(searchText) || 
+                var matchingItems = group.Value.Where(item =>
+                    string.IsNullOrEmpty(searchText) ||
                     item.ToLower().Contains(searchText.ToLower())).ToList();
-                
+
                 if (matchingItems.Count == 0)
                     continue;
-                
+
                 anyFound = true;
-                
+
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField($"{group.Key} Blendshapes ({matchingItems.Count})", EditorStyles.boldLabel);
-                
+
                 foreach (var item in matchingItems)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    
+
                     // Highlight search matches
                     var style = new GUIStyle(EditorStyles.label);
-                    if (!string.IsNullOrEmpty(searchText) && 
+                    if (!string.IsNullOrEmpty(searchText) &&
                         item.ToLower().Contains(searchText.ToLower()))
                     {
                         style.fontStyle = FontStyle.Bold;
                     }
-                    
+
                     EditorGUILayout.LabelField(item, style);
-                    
+
                     if (GUILayout.Button("Select", GUILayout.Width(60)))
                     {
                         SelectBlendshape(item);
                         GUIUtility.ExitGUI(); // Close window after selection
                     }
-                    
+
                     EditorGUILayout.EndHorizontal();
                 }
-                
+
                 EditorGUILayout.EndVertical();
                 EditorGUILayout.Space(5);
             }
-            
+
             if (!anyFound)
             {
                 EditorGUILayout.HelpBox(
-                    $"No Overte blendshapes matching '{searchText}' found.", 
+                    $"No Overte blendshapes matching '{searchText}' found.",
                     MessageType.Info
                 );
             }
-            
+
             EditorGUILayout.EndScrollView();
-            
+
             EditorGUILayout.Space(10);
-            
+
             // Cancel button at bottom
             if (GUILayout.Button("Cancel", GUILayout.Height(30)))
             {
                 Close();
             }
         }
-        
+
         private void SelectBlendshape(string blendshapeName)
         {
             targetProperty.stringValue = blendshapeName;

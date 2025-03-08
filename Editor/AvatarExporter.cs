@@ -23,6 +23,7 @@ namespace Overte.Exporter.Avatar
     internal class AvatarExporter
     {
         private readonly GameObject _avatar;
+        private readonly string _name;
         private List<RemapBlendShape> _blendshapes = new();
 
         private readonly Dictionary<AvatarRule, string> _failedAvatarRules = new();
@@ -45,8 +46,9 @@ namespace Overte.Exporter.Avatar
         private List<string> _warnings = new();
 
 
-        internal AvatarExporter(GameObject avatar)
+        internal AvatarExporter(string name, GameObject avatar)
         {
+            _name = _name;
             _avatar = avatar;
             _gLTFSettings.ExportDisabledGameObjects = false;
         }
@@ -74,7 +76,6 @@ namespace Overte.Exporter.Avatar
             var avatarCopy = Object.Instantiate(_avatar, Vector3.zero, Quaternion.identity);
 
             var exporter = new GLTFSceneExporter(avatarCopy.transform, new ExportContext(_gLTFSettings));
-            // exporter.SaveGLTFandBin(ExportPath, fileName);
             exporter.SaveGLB(p, _avatar.name);
 
             SetBoneInformation(avatarCopy);
@@ -96,9 +97,9 @@ namespace Overte.Exporter.Avatar
         private bool WriteFst(string exportFstPath)
         {
             var avatarDescriptor = _avatar.GetComponent<OverteAvatarDescriptor>();
-            
+
             var fst = new FST();
-            fst.name = _avatar.name;
+            fst.name = _name;
             fst.filename = $"{_avatar.name}.glb";
 
             // write out joint mappings to fst file
