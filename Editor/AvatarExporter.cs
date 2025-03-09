@@ -22,8 +22,8 @@ namespace Overte.Exporter.Avatar
 {
     internal class AvatarExporter
     {
-        private readonly GameObject _avatar;
-        private readonly string _name;
+        private GameObject _avatar;
+        private string _name;
         private List<RemapBlendShape> _blendshapes = new();
 
         private readonly Dictionary<AvatarRule, string> _failedAvatarRules = new();
@@ -43,18 +43,17 @@ namespace Overte.Exporter.Avatar
         private readonly Dictionary<string, UserBoneInformation> _userBoneInfos = new();
 
         private BoneTreeNode _userBoneTree = new();
-        private List<string> _warnings = new();
 
 
-        internal AvatarExporter(string name, GameObject avatar)
+        internal AvatarExporter()
         {
-            _name = _name;
-            _avatar = avatar;
             _gLTFSettings.ExportDisabledGameObjects = false;
         }
 
-        internal void ExportAvatar(string path)
+        internal void ExportAvatar(string name, string path, GameObject avatar)
         {
+            _name = name;
+            _avatar = avatar;
             var animator = _avatar.GetComponent<Animator>();
 
             if (!animator.isHuman)
@@ -86,8 +85,31 @@ namespace Overte.Exporter.Avatar
 
             Object.DestroyImmediate(avatarCopy);
         }
-
-
+        
+        public Dictionary<AvatarRule, string> CheckForErrors(GameObject avatar)
+        {
+            _avatar = avatar;
+            var animator = _avatar.GetComponent<Animator>();
+            if (animator == null)
+            {
+                _failedAvatarRules.Add(AvatarRule.NoAnimator, "Avatar has no Animator");
+                return _failedAvatarRules;
+            }
+            if (!animator.isHuman)
+            {
+                _failedAvatarRules.Add(AvatarRule.NonHumanoid, "Avatar is not set to Humanoid");
+                return _failedAvatarRules;
+            }
+            _humanDescription = animator.avatar.humanDescription;
+            SetBoneInformation(_avatar);
+            var bounds = AvatarUtilities.GetAvatarBounds(avatar);
+            var height = AvatarUtilities.GetAvatarHeight(avatar);
+            // generate the list of avatar rule failure strings for any avatar rules that are not satisfied by this avatar
+            SetFailedAvatarRules(bounds, height);
+            Debug.Log($"Found {_failedAvatarRules.Count} issues with {avatar.name}");
+            return _failedAvatarRules;
+        }
+        
         // The Overte FBX Serializer omits the colon based prefixes. This will make the jointnames compatible.
         private string RemoveTypeFromJointname(string jointName)
         {
@@ -185,8 +207,6 @@ namespace Overte.Exporter.Avatar
             // bone parents and positions as well as build a bone tree, then destroy it
             // GameObject avatarGameObject = (GameObject)Instantiate(avatarResource, Vector3.zero, Quaternion.identity);
             TraverseUserBoneTree(avatar.transform, _userBoneTree);
-            var bounds = AvatarUtilities.GetAvatarBounds(avatar);
-            var height = AvatarUtilities.GetAvatarHeight(avatar);
             // DestroyImmediate(avatarGameObject);
 
             // iterate over Humanoid bones and update user bone info to increase human mapping counts for each bone
@@ -206,9 +226,6 @@ namespace Overte.Exporter.Avatar
                     }
                 }
             }
-
-            // generate the list of avatar rule failure strings for any avatar rules that are not satisfied by this avatar
-            SetFailedAvatarRules(bounds, height);
         }
 
         private void TraverseUserBoneTree(Transform modelBone, BoneTreeNode boneTreeNode)
@@ -338,7 +355,10 @@ namespace Overte.Exporter.Avatar
 
             // iterate over all avatar rules in order and add any rules that fail
             // to the failed avatar rules map with appropriate error or warning text
-            for (AvatarRule avatarRule = 0; avatarRule < AvatarRule.AvatarRuleEnd; ++avatarRule)
+            // for (AvatarRule avatarRule = 0; avatarRule < AvatarRule.AvatarRuleEnd; ++avatarRule)
+            foreach (var rule in Enum.GetValues(typeof(AvatarRule)))
+            {
+                var avatarRule = (AvatarRule)rule;
                 switch (avatarRule)
                 {
                     case AvatarRule.RecommendedUnityVersion:
@@ -511,6 +531,7 @@ namespace Overte.Exporter.Avatar
 
                         break;
                 }
+            }
         }
 
         private bool IsHumanBoneInHierarchy(BoneTreeNode boneTreeNode, string humanBoneName)
@@ -595,6 +616,8 @@ namespace Overte.Exporter.Avatar
             textureDirectory = textureDirectory.Replace("//", "/");
             return textureDirectory;
         }
+
+       
     }
 
     internal static class AvatarUtilities

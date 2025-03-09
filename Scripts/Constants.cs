@@ -6,6 +6,7 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace Overte.Exporter.Avatar
     public static class Constants
     {
         // update version number for every PR that changes this file, also set updated version in README file
-        public const string EXPORTER_VERSION = "1.0.0";
+        public const string EXPORTER_VERSION = "2.0.0";
 
         public const float HIPS_MIN_Y_PERCENT_OF_HEIGHT = 0.03f;
         public const float BELOW_GROUND_THRESHOLD_PERCENT_OF_HEIGHT = -0.15f;
@@ -29,8 +30,8 @@ namespace Overte.Exporter.Avatar
 
         // TODO: use regex
         public static readonly string[] RECOMMENDED_UNITY_VERSIONS = new string[] {
-            "2019.4.31f1", //Version currently used by VRChat
-            "2021.3.23f1" //Version currently used by ChilloutVR
+            "2022.3.22f1", // Version currently used by VRChat
+            "2021.3.23f1" // Version currently used by ChilloutVR
         };
 
         public static readonly Dictionary<string, string> HUMANOID_TO_OVERTE_JOINT_NAME = new Dictionary<string, string> {
@@ -191,6 +192,8 @@ namespace Overte.Exporter.Avatar
         public enum AvatarRule
         {
             RecommendedUnityVersion,
+            NoAnimator,
+            NonHumanoid,
             SingleRoot,
             NoDuplicateMapping,
             NoAsymmetricalLegMapping,
@@ -209,7 +212,6 @@ namespace Overte.Exporter.Avatar
             ExtentsNotBelowGround,
             HipsSpineChestNotCoincident,
             TotalBoneCountUnderLimit,
-            AvatarRuleEnd,
         };
         // rules that are treated as errors and prevent exporting, otherwise rules will show as warnings
         public static readonly AvatarRule[] EXPORT_BLOCKING_AVATAR_RULES = new AvatarRule[] {

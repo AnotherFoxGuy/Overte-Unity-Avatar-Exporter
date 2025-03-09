@@ -15,14 +15,30 @@ namespace Overte.Exporter.Avatar.Editor
         private bool showBlendshapeList = true;
         private Vector2 scrollPosition;
         private SkinnedMeshRenderer[] skinnedMeshRenderers;
+        private AvatarExporter _exporter;
+        private Dictionary<Constants.AvatarRule, string> _warnings = new();
 
         private void OnEnable()
         {
+            _exporter = new AvatarExporter();
             avatarNameProperty = serializedObject.FindProperty("AvatarName");
             remapedBlendShapeListProperty = serializedObject.FindProperty("RemapedBlendShapeList");
 
+            // if (string.IsNullOrEmpty(avatarNameProperty.stringValue))
+            // {
+            //     var av = (OverteAvatarDescriptor)target;
+            //     avatarNameProperty.stringValue = av.gameObject.name;
+            // }
+
             // Cache skinned mesh renderers
             RefreshSkinnedMeshRenderers();
+            CheckForErrors();
+        }
+
+        private void CheckForErrors()
+        {
+            var av = (OverteAvatarDescriptor)target;
+            _warnings = _exporter.CheckForErrors(av.gameObject);
         }
 
         private void RefreshSkinnedMeshRenderers()
@@ -64,10 +80,23 @@ namespace Overte.Exporter.Avatar.Editor
 
             serializedObject.ApplyModifiedProperties();
             
+            EditorGUILayout.Separator();
+
+            foreach (var warning in _warnings)
+            {
+                EditorGUILayout.HelpBox(warning.Value, MessageType.Warning);
+            }
+            
+            if (avatarNameProperty.stringValue == "")
+            {
+                EditorGUILayout.HelpBox("Avatar name not set!", MessageType.Error);
+                GUI.enabled = false;
+            }
             if (GUILayout.Button("Export avatar"))
             {
                 ExportAvatar();
             }
+            GUI.enabled = true;
         }
 
         private void ExportAvatar()
@@ -78,8 +107,7 @@ namespace Overte.Exporter.Avatar.Editor
 
             var av = (OverteAvatarDescriptor)target;
             Debug.Log(path);
-            var avex = new AvatarExporter(avatarNameProperty.stringValue, av.gameObject);
-            avex.ExportAvatar(path);
+            _exporter.ExportAvatar(avatarNameProperty.stringValue, path, av.gameObject);
         }
 
         private void DrawBlendShapeList()
