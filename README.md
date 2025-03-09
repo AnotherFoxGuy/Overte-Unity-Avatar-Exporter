@@ -1,25 +1,26 @@
 Avatar Exporter
 ===========
 Copyright 2018 High Fidelity, Inc.   
-Copyright 2022 Overte e.V.
+Copyright 2022-2025 Overte e.V.
 
-Note: It is recommended to use Unity version 2019.4.31f1 for this Avatar Exporter.
+Note: It is recommended to use Unity version 2022.3.22f1 for this Avatar Exporter.
 
-To create a new avatar project:
-1. Import your .fbx avatar model into your Unity project's Assets by either dragging and dropping the file into the Assets window or by using Assets menu > Import New Assets.
-2. Select the .fbx avatar that you imported in step 1 in the Assets window, and in the Rig section of the Inspector window set the Animation Type to Humanoid and choose Apply. 
-3. With the .fbx avatar still selected in the Assets window, choose High Fidelity menu > Export New Avatar.
-4. Select a name for your avatar project (this will be used to create a directory with that name), as well as the target location for your project folder.
-5. If necessary, adjust the scale for your avatar so that it's height is within the recommended range.
-6. Once it is exported, you will receive a successfully exported dialog with any warnings, and your project directory will open in File Explorer.
 
-To update an existing avatar project:
-1. Select the existing .fbx avatar in the Assets window that you would like to re-export and choose High Fidelity menu > Update Existing Avatar
-2. Select the .fst project file that you wish to update.
-3. If the .fbx file in your Unity Assets folder is newer than the existing .fbx file in your selected avatar project or vice-versa, you will be prompted if you wish to replace the older file with the newer file before performing the update.
-4. Once it is updated, you will receive a successfully exported dialog with any warnings, and your project directory will open in File Explorer.
+### Installation
 
-* WARNING *
-If you are using any external textures as part of your .fbx model, be sure they are copied into the textures folder that is created in the project folder after exporting a new avatar.
+1. Open `Window > Package Manager`
+2. Click <kbd>+</kbd>
+3. Select <kbd>Add Package from git URL</kbd>
+4. Paste `https://github.com/KhronosGroup/UnityGLTF.git#release/2.13.0`
+5. Click <kbd>Add</kbd>.
 
-For further details including troubleshooting tips, see the full documentation at https://docs.overte.org/create/avatars/find-avatars.html#overte-avatar-exporter-for-unity
+Repeat the steps above with the following url: `https://github.com/AnotherFoxGuy/Overte-Unity-Avatar-Exporter.git`
+
+### Usage
+
+1. Drag your avatar into the scene
+2. On the root of the avatar add the `OverteAvatarDescriptor` component
+3. Give your avatar a name
+4. Fix any warnings if there are any
+5. Click the export button
+6. Upload the `.fst` and `.glb` (See https://docs.overte.org/en/latest/create/avatars/package-avatar.html#host-your-avatar)
