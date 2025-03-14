@@ -414,7 +414,7 @@ namespace Overte.Exporter.Avatar.Editor
             window.maxSize = new Vector2(500, 600);
             window.targetProperty = property;
             window.serializedObject = serializedObj;
-            window.enumNames = System.Enum.GetNames(typeof(OverteAvatarDescriptor.OvBlendshapes));
+            window.enumNames = System.Enum.GetNames(typeof(Constants.Blendshapes));
             window.ShowUtility();
         }
 

@@ -2,7 +2,7 @@
 //
 //  Created by David Back on 28 Nov 2018
 //  Copyright 2018 High Fidelity, Inc.
-//  Copyright 2022 to 2023 Overte e.V.
+//  Copyright 2022 to 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityGLTF;
@@ -24,16 +25,8 @@ namespace Overte.Exporter.Avatar
     {
         private GameObject _avatar;
         private string _name;
-        private List<RemapBlendShape> _blendshapes = new();
 
         private readonly Dictionary<AvatarRule, string> _failedAvatarRules = new();
-        // // ExportSettings provides generic export settings
-        // private static readonly ExportSettings GltfExportSettings = new ExportSettings
-        // {
-        //     Format = GltfFormat.Json,
-        //     FileConflictResolution = FileConflictResolution.Overwrite,
-        // };
-        // // private FST currentFst;
 
         private readonly GLTFSettings _gLTFSettings = ScriptableObject.CreateInstance<GLTFSettings>();
 
@@ -48,6 +41,7 @@ namespace Overte.Exporter.Avatar
         internal AvatarExporter()
         {
             _gLTFSettings.ExportDisabledGameObjects = false;
+            _gLTFSettings.BlendShapeExportSparseAccessors = true;
         }
 
         internal void ExportAvatar(string name, string path, GameObject avatar)
@@ -69,10 +63,20 @@ namespace Overte.Exporter.Avatar
 
             _humanDescription = animator.avatar.humanDescription;
 
-            Debug.Log(animator.gameObject.name);
+            // Debug.Log(animator.gameObject.name);
             var p = Path.GetDirectoryName(path);
 
             var avatarCopy = Object.Instantiate(_avatar, Vector3.zero, Quaternion.identity);
+            var avatarDescriptor = _avatar.GetComponent<OverteAvatarDescriptor>();
+
+            if (avatarDescriptor.RemapedBlendShapeList.Count != 0)
+            {
+                var meshes = avatarCopy.GetComponentsInChildren<SkinnedMeshRenderer>();
+                foreach (var mesh in meshes)
+                {
+                    BakeAndKeepSpecifiedBlendShapes(avatarDescriptor, mesh);
+                }
+            }
 
             var exporter = new GLTFSceneExporter(avatarCopy.transform, new ExportContext(_gLTFSettings));
             exporter.SaveGLB(p, _avatar.name);
@@ -85,7 +89,7 @@ namespace Overte.Exporter.Avatar
 
             Object.DestroyImmediate(avatarCopy);
         }
-        
+
         public Dictionary<AvatarRule, string> CheckForErrors(GameObject avatar)
         {
             _avatar = avatar;
@@ -95,21 +99,23 @@ namespace Overte.Exporter.Avatar
                 _failedAvatarRules.Add(AvatarRule.NoAnimator, "Avatar has no Animator");
                 return _failedAvatarRules;
             }
+
             if (!animator.isHuman)
             {
                 _failedAvatarRules.Add(AvatarRule.NonHumanoid, "Avatar is not set to Humanoid");
                 return _failedAvatarRules;
             }
+
             _humanDescription = animator.avatar.humanDescription;
             SetBoneInformation(_avatar);
-            var bounds = AvatarUtilities.GetAvatarBounds(avatar);
-            var height = AvatarUtilities.GetAvatarHeight(avatar);
+            var bounds = GetAvatarBounds(avatar);
+            var height = GetAvatarHeight(avatar);
             // generate the list of avatar rule failure strings for any avatar rules that are not satisfied by this avatar
             SetFailedAvatarRules(bounds, height);
             Debug.Log($"Found {_failedAvatarRules.Count} issues with {avatar.name}");
             return _failedAvatarRules;
         }
-        
+
         // The Overte FBX Serializer omits the colon based prefixes. This will make the jointnames compatible.
         private string RemoveTypeFromJointname(string jointName)
         {
@@ -216,15 +222,13 @@ namespace Overte.Exporter.Avatar
             {
                 var humanName = bone.humanName;
                 var userBoneName = bone.boneName;
-                if (_userBoneInfos.ContainsKey(userBoneName))
-                {
-                    ++_userBoneInfos[userBoneName].mappingCount;
-                    if (HUMANOID_TO_OVERTE_JOINT_NAME.ContainsKey(humanName))
-                    {
-                        _userBoneInfos[userBoneName].humanName = humanName;
-                        _humanoidToUserBoneMappings.Add(humanName, userBoneName);
-                    }
-                }
+                if (!_userBoneInfos.TryGetValue(userBoneName, out var info)) 
+                    continue;
+                ++info.mappingCount;
+                if (!HUMANOID_TO_OVERTE_JOINT_NAME.ContainsKey(humanName)) 
+                    continue;
+                _userBoneInfos[userBoneName].humanName = humanName;
+                _humanoidToUserBoneMappings.Add(humanName, userBoneName);
             }
         }
 
@@ -256,12 +260,12 @@ namespace Overte.Exporter.Avatar
 
                 // remove the bone tree node from root's children for the root child bone that has mesh children
                 if (!string.IsNullOrEmpty(previousBoneName))
-                    foreach (var rootChild in _userBoneTree.children)
-                        if (rootChild.boneName == previousBoneName)
-                        {
-                            _userBoneTree.children.Remove(rootChild);
-                            break;
-                        }
+                    foreach (var rootChild in _userBoneTree.children.Where(rootChild =>
+                                 rootChild.boneName == previousBoneName))
+                    {
+                        _userBoneTree.children.Remove(rootChild);
+                        break;
+                    }
             }
             else if (!light && !camera)
             {
@@ -306,31 +310,30 @@ namespace Overte.Exporter.Avatar
 
         private void AdjustUpperChestMapping()
         {
-            if (!_humanoidToUserBoneMappings.ContainsKey("UpperChest"))
+            if (_humanoidToUserBoneMappings.ContainsKey("UpperChest"))
+                return;
+            // if parent of Neck is not Chest then map the parent to UpperChest
+            string neckUserBone;
+            if (_humanoidToUserBoneMappings.TryGetValue("Neck", out neckUserBone))
             {
-                // if parent of Neck is not Chest then map the parent to UpperChest
-                string neckUserBone;
-                if (_humanoidToUserBoneMappings.TryGetValue("Neck", out neckUserBone))
+                UserBoneInformation neckParentBoneInfo;
+                var neckParentUserBone = _userBoneInfos[neckUserBone].parentName;
+                if (_userBoneInfos.TryGetValue(neckParentUserBone, out neckParentBoneInfo) &&
+                    !neckParentBoneInfo.HasHumanMapping())
                 {
-                    UserBoneInformation neckParentBoneInfo;
-                    var neckParentUserBone = _userBoneInfos[neckUserBone].parentName;
-                    if (_userBoneInfos.TryGetValue(neckParentUserBone, out neckParentBoneInfo) &&
-                        !neckParentBoneInfo.HasHumanMapping())
-                    {
-                        neckParentBoneInfo.humanName = "UpperChest";
-                        _humanoidToUserBoneMappings.Add("UpperChest", neckParentUserBone);
-                    }
+                    neckParentBoneInfo.humanName = "UpperChest";
+                    _humanoidToUserBoneMappings.Add("UpperChest", neckParentUserBone);
                 }
+            }
 
-                // if there is still no UpperChest bone but there is a Chest bone then we remap Chest to UpperChest
-                string chestUserBone;
-                if (!_humanoidToUserBoneMappings.ContainsKey("UpperChest") &&
-                    _humanoidToUserBoneMappings.TryGetValue("Chest", out chestUserBone))
-                {
-                    _userBoneInfos[chestUserBone].humanName = "UpperChest";
-                    _humanoidToUserBoneMappings.Remove("Chest");
-                    _humanoidToUserBoneMappings.Add("UpperChest", chestUserBone);
-                }
+            // if there is still no UpperChest bone but there is a Chest bone then we remap Chest to UpperChest
+            string chestUserBone;
+            if (!_humanoidToUserBoneMappings.ContainsKey("UpperChest") &&
+                _humanoidToUserBoneMappings.TryGetValue("Chest", out chestUserBone))
+            {
+                _userBoneInfos[chestUserBone].humanName = "UpperChest";
+                _humanoidToUserBoneMappings.Remove("Chest");
+                _humanoidToUserBoneMappings.Add("UpperChest", chestUserBone);
             }
         }
 
@@ -617,29 +620,176 @@ namespace Overte.Exporter.Avatar
             return textureDirectory;
         }
 
-       
-    }
+        /// <summary>
+        /// Bakes all blend shapes except those specified to keep
+        /// </summary>
+        private void BakeAndKeepSpecifiedBlendShapes(OverteAvatarDescriptor descriptor,
+            SkinnedMeshRenderer meshRenderer)
+        {
+            var originalMesh = meshRenderer.sharedMesh;
 
-    internal static class AvatarUtilities
-    {
-        public const float DEFAULT_AVATAR_HEIGHT = 1.755f;
+            var blendshapeNames = descriptor.RemapedBlendShapeList
+                .Select(blendshape => blendshape.from)
+                .ToList();
 
-        public static Bounds GetAvatarBounds(GameObject avatarObject)
+            // Extract blend shapes to keep
+            var blendShapeIndicesToTransfer = descriptor.RemapedBlendShapeList
+                .Select(blendshape => originalMesh.GetBlendShapeIndex(blendshape.from))
+                .Where(i => i != -1).ToList();
+
+            var ovBs = Enum.GetNames(typeof(Blendshapes));
+
+            for (var i = 0; i < originalMesh.blendShapeCount; i++)
+            {
+                var name = originalMesh.GetBlendShapeName(i);
+                if (!ovBs.Contains(name)) continue;
+                blendshapeNames.Add(name);
+                blendShapeIndicesToTransfer.Add(i);
+            }
+
+            // Store original blend shape weights
+            var originalWeights = new Dictionary<string, float>();
+
+            foreach (var blendshape in blendshapeNames)
+            {
+                var i = originalMesh.GetBlendShapeIndex(blendshape);
+                originalWeights[blendshape] = meshRenderer.GetBlendShapeWeight(i);
+            }
+
+            // Bake the mesh
+            var bakedMesh = new Mesh();
+            meshRenderer.BakeMesh(bakedMesh);
+
+            // Copy UV, tangents, and other mesh data
+            CopyMeshData(originalMesh, bakedMesh);
+
+            // Transfer bone weights
+            TransferBoneWeights(originalMesh, bakedMesh);
+
+            // If we have blend shapes to transfer, do it now
+            if (blendShapeIndicesToTransfer.Count > 0)
+            {
+                // Transfer selected blend shapes to the new mesh
+                TransferBlendShapes(originalMesh, bakedMesh, blendShapeIndicesToTransfer);
+            }
+
+            // Assign the baked mesh to the target
+            meshRenderer.sharedMesh = bakedMesh;
+
+            if (blendShapeIndicesToTransfer.Count > 0)
+            {
+                // Restore original blend shape weights on source
+                foreach (var blendshape in blendshapeNames)
+                {
+                    var i = meshRenderer.sharedMesh.GetBlendShapeIndex(blendshape);
+                    meshRenderer.SetBlendShapeWeight(i, originalWeights[blendshape]);
+                }
+            }
+
+            Debug.Log(
+                $"Mesh {meshRenderer.name} baked with {blendShapeIndicesToTransfer.Count} blend shapes kept.");
+        }
+
+        private void TransferBlendShapes(Mesh source, Mesh destination, List<int> blendShapeIndices)
+        {
+            // For each blend shape to transfer
+            foreach (var blendShapeIndex in blendShapeIndices)
+            {
+                if (blendShapeIndex == -1)
+                    continue;
+
+                var blendShapeName = source.GetBlendShapeName(blendShapeIndex);
+                var frameCount = source.GetBlendShapeFrameCount(blendShapeIndex);
+
+                // For each frame in the blend shape
+                for (var frameIndex = 0; frameIndex < frameCount; frameIndex++)
+                {
+                    var deltaVertices = new Vector3[source.vertexCount];
+                    var deltaNormals = new Vector3[source.vertexCount];
+                    var deltaTangents = new Vector3[source.vertexCount];
+
+                    // Get the blend shape data
+                    source.GetBlendShapeFrameVertices(blendShapeIndex, frameIndex, deltaVertices, deltaNormals,
+                        deltaTangents);
+                    var frameWeight = source.GetBlendShapeFrameWeight(blendShapeIndex, frameIndex);
+
+                    // Add the blend shape to the destination mesh
+                    destination.AddBlendShapeFrame(blendShapeName, frameWeight, deltaVertices, deltaNormals,
+                        deltaTangents);
+                }
+            }
+        }
+
+        private static void TransferBoneWeights(Mesh source, Mesh destination)
+        {
+            // Check if the source has bone weights
+            if (source.boneWeights == null || source.boneWeights.Length == 0)
+            {
+                Debug.LogWarning("Source mesh does not have bone weights to transfer.");
+                return;
+            }
+
+            // Check if the vertex counts match
+            if (source.vertexCount != destination.vertexCount)
+            {
+                Debug.LogError(
+                    "Source and destination meshes have different vertex counts. Cannot transfer bone weights.");
+                return;
+            }
+
+            // Copy bone weights
+            destination.boneWeights = source.boneWeights;
+
+            // Copy bind poses
+            destination.bindposes = source.bindposes;
+        }
+
+        private static void CopyMeshData(Mesh source, Mesh destination)
+        {
+            // Copy UV sets
+            if (source.uv is { Length: > 0 })
+                destination.uv = source.uv;
+
+            if (source.uv2 is { Length: > 0 })
+                destination.uv2 = source.uv2;
+
+            if (source.uv3 is { Length: > 0 })
+                destination.uv3 = source.uv3;
+
+            if (source.uv4 is { Length: > 0 })
+                destination.uv4 = source.uv4;
+
+            // Copy tangents
+            if (source.tangents is { Length: > 0 })
+                destination.tangents = source.tangents;
+
+            // Set the same submesh count
+            destination.subMeshCount = source.subMeshCount;
+
+            // Copy submesh topology
+            for (var i = 0; i < source.subMeshCount; i++)
+            {
+                destination.SetSubMesh(i, source.GetSubMesh(i));
+            }
+        }
+
+        private static Bounds GetAvatarBounds(GameObject avatarObject)
         {
             var bounds = new Bounds();
-            if (avatarObject != null)
-            {
-                var meshRenderers = avatarObject.GetComponentsInChildren<MeshRenderer>();
-                var skinnedMeshRenderers = avatarObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-                foreach (var renderer in meshRenderers) bounds.Encapsulate(renderer.bounds);
+            if (avatarObject == null)
+                return bounds;
+            var meshRenderers = avatarObject.GetComponentsInChildren<MeshRenderer>();
+            var skinnedMeshRenderers = avatarObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+            foreach (var renderer in meshRenderers)
+                bounds.Encapsulate(renderer.bounds);
 
-                foreach (var renderer in skinnedMeshRenderers) bounds.Encapsulate(renderer.bounds);
-            }
+            foreach (var renderer in skinnedMeshRenderers)
+                bounds.Encapsulate(renderer.bounds);
 
             return bounds;
         }
 
-        public static float GetAvatarHeight(GameObject avatarObject)
+        private static float GetAvatarHeight(GameObject avatarObject)
         {
             // height of an avatar model can be determined to be the max Y extents of the combined bounds for all its mesh renderers
             var avatarBounds = GetAvatarBounds(avatarObject);

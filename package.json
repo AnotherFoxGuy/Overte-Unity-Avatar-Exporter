@@ -1,6 +1,6 @@
 {
   "name": "org.overte.avatar-exporter",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "displayName": "Overte Avatar Exporter for Unity",
   "description": "Overte Avatar Exporter for Unity",
   "unity": "2022.3",

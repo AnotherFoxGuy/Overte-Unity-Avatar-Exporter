@@ -15,7 +15,7 @@ namespace Overte.Exporter.Avatar
     public static class Constants
     {
         // update version number for every PR that changes this file, also set updated version in README file
-        public const string EXPORTER_VERSION = "2.0.0";
+        public const string EXPORTER_VERSION = "0.7.0";
 
         public const float HIPS_MIN_Y_PERCENT_OF_HEIGHT = 0.03f;
         public const float BELOW_GROUND_THRESHOLD_PERCENT_OF_HEIGHT = -0.15f;
@@ -188,6 +188,81 @@ namespace Overte.Exporter.Avatar
             STANDARD_ROUGHNESS_SHADER,
             STANDARD_SPECULAR_SHADER,
         };
+        
+        public enum Blendshapes
+        {
+            //Eye Blendshapes
+            EyeBlink_L,
+            EyeBlink_R,
+            EyeSquint_L,
+            EyeSquint_R,
+            EyeDown_L,
+            EyeDown_R,
+            EyeIn_L,
+            EyeIn_R,
+            EyeOpen_L,
+            EyeOpen_R,
+            EyeOut_L,
+            EyeOut_R,
+            EyeUp_L,
+            EyeUp_R,
+            BrowsD_L,
+            BrowsD_R,
+            BrowsU_C,
+            BrowsU_L,
+            BrowsU_R,
+
+            // Jaw Blendshapes
+            JawFwd,
+            JawLeft,
+            JawOpen,
+            JawRight,
+            MouthLeft,
+            MouthRight,
+            MouthFrown_L,
+            MouthFrown_R,
+            MouthSmile_L,
+            MouthSmile_R,
+            MouthDimple_L,
+            MouthDimple_R,
+
+            // Lip Blendshapes
+            LipsStretch_L,
+            LipsStretch_R,
+            LipsUpperClose,
+            LipsLowerClose,
+            LipsFunnel,
+            LipsPucker,
+            Puff,
+
+            //Mouth, Cheek and User Blendshapes
+            CheekSquint_L,
+            CheekSquint_R,
+            MouthClose,
+            MouthUpperUp_L,
+            MouthUpperUp_R,
+            MouthLowerDown_L,
+            MouthLowerDown_R,
+            MouthPress_L,
+            MouthPress_R,
+            MouthShrugLower,
+            MouthShrugUpper,
+            NoseSneer_L,
+            NoseSneer_R,
+            TongueOut,
+
+            // User Defined
+            UserBlendshape0,
+            UserBlendshape1,
+            UserBlendshape2,
+            UserBlendshape3,
+            UserBlendshape4,
+            UserBlendshape5,
+            UserBlendshape6,
+            UserBlendshape7,
+            UserBlendshape8,
+            UserBlendshape9,
+        }
 
         public enum AvatarRule
         {
