@@ -50,7 +50,7 @@ namespace Overte.Exporter.Avatar
             _avatar = avatar;
             var animator = _avatar.GetComponent<Animator>();
 
-            if (!animator.isHuman)
+            if (animator == null || !animator.isHuman)
             {
                 EditorUtility.DisplayDialog(
                     "Error",
@@ -69,7 +69,7 @@ namespace Overte.Exporter.Avatar
             var avatarCopy = Object.Instantiate(_avatar, Vector3.zero, Quaternion.identity);
             var avatarDescriptor = _avatar.GetComponent<OverteAvatarDescriptor>();
 
-            if (avatarDescriptor.RemapedBlendShapeList.Count != 0)
+            if (avatarDescriptor.RemapedBlendShapeList.Count > 0 && avatarDescriptor.OptimizeBlendShapes)
             {
                 var meshes = avatarCopy.GetComponentsInChildren<SkinnedMeshRenderer>();
                 foreach (var mesh in meshes)
@@ -612,14 +612,7 @@ namespace Overte.Exporter.Avatar
                 _failedAvatarRules.Add(avatarRule,
                     $"The number of bones mapped in Humanoid for the left {appendage} ({leftCount}) does not match the number of bones mapped in Humanoid for the right {appendage} ({rightCount}).");
         }
-
-        private string GetTextureDirectory(string basePath)
-        {
-            var textureDirectory = $"{Path.GetDirectoryName(basePath)}/{TEXTURES_DIRECTORY}";
-            textureDirectory = textureDirectory.Replace("//", "/");
-            return textureDirectory;
-        }
-
+        
         /// <summary>
         /// Bakes all blend shapes except those specified to keep
         /// </summary>
@@ -658,7 +651,7 @@ namespace Overte.Exporter.Avatar
 
             // Bake the mesh
             var bakedMesh = new Mesh();
-            meshRenderer.BakeMesh(bakedMesh);
+            meshRenderer.BakeMesh(bakedMesh, true);
 
             // Copy UV, tangents, and other mesh data
             CopyMeshData(originalMesh, bakedMesh);

@@ -9,20 +9,22 @@ namespace Overte.Exporter.Avatar.Editor
     [CustomEditor(typeof(OverteAvatarDescriptor))]
     public class OverteAvatarDescriptorEditor : UnityEditor.Editor
     {
-        private SerializedProperty avatarNameProperty;
-        private SerializedProperty remapedBlendShapeListProperty;
+        private SerializedProperty _avatarNameProperty;
+        private SerializedProperty _remapedBlendShapeListProperty;
+        private SerializedProperty _optimizeBlendShapesProperty;
 
-        private bool showBlendshapeList = true;
-        private Vector2 scrollPosition;
-        private SkinnedMeshRenderer[] skinnedMeshRenderers;
+        private bool _showBlendshapeList = true;
+        private Vector2 _scrollPosition;
+        private SkinnedMeshRenderer[] _skinnedMeshRenderers;
         private AvatarExporter _exporter;
         private Dictionary<Constants.AvatarRule, string> _warnings = new();
 
         private void OnEnable()
         {
             _exporter = new AvatarExporter();
-            avatarNameProperty = serializedObject.FindProperty("AvatarName");
-            remapedBlendShapeListProperty = serializedObject.FindProperty("RemapedBlendShapeList");
+            _avatarNameProperty = serializedObject.FindProperty("AvatarName");
+            _remapedBlendShapeListProperty = serializedObject.FindProperty("RemapedBlendShapeList");
+            _optimizeBlendShapesProperty = serializedObject.FindProperty("OptimizeBlendShapes");
 
             // if (string.IsNullOrEmpty(avatarNameProperty.stringValue))
             // {
@@ -44,14 +46,16 @@ namespace Overte.Exporter.Avatar.Editor
         private void RefreshSkinnedMeshRenderers()
         {
             var descriptor = (OverteAvatarDescriptor)target;
-            skinnedMeshRenderers = descriptor.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            _skinnedMeshRenderers = descriptor.GetComponentsInChildren<SkinnedMeshRenderer>(true);
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(avatarNameProperty);
+            EditorGUILayout.PropertyField(_avatarNameProperty);
+            
+            EditorGUILayout.PropertyField(_optimizeBlendShapesProperty);
 
             // Refresh button for skinned mesh renderers
             EditorGUILayout.BeginHorizontal();
@@ -63,7 +67,7 @@ namespace Overte.Exporter.Avatar.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            if (skinnedMeshRenderers.Length == 0)
+            if (_skinnedMeshRenderers.Length == 0)
             {
                 EditorGUILayout.HelpBox(
                     "No SkinnedMeshRenderer components found in children. Add meshes to your avatar to map blendshapes.",
@@ -71,7 +75,7 @@ namespace Overte.Exporter.Avatar.Editor
             }
             else
             {
-                EditorGUILayout.LabelField($"Found {skinnedMeshRenderers.Length} SkinnedMeshRenderer(s)",
+                EditorGUILayout.LabelField($"Found {_skinnedMeshRenderers.Length} SkinnedMeshRenderer(s)",
                     EditorStyles.miniLabel);
             }
 
@@ -87,7 +91,7 @@ namespace Overte.Exporter.Avatar.Editor
                 EditorGUILayout.HelpBox(warning.Value, MessageType.Warning);
             }
             
-            if (avatarNameProperty.stringValue == "")
+            if (_avatarNameProperty.stringValue == "")
             {
                 EditorGUILayout.HelpBox("Avatar name not set!", MessageType.Error);
                 GUI.enabled = false;
@@ -101,13 +105,13 @@ namespace Overte.Exporter.Avatar.Editor
 
         private void ExportAvatar()
         {
-            var path = EditorUtility.SaveFilePanel("Select .fst", "", avatarNameProperty.stringValue, "fst");
+            var path = EditorUtility.SaveFilePanel("Select .fst", "", _avatarNameProperty.stringValue, "fst");
             if (path == "")
                 return;
 
             var av = (OverteAvatarDescriptor)target;
             Debug.Log(path);
-            _exporter.ExportAvatar(avatarNameProperty.stringValue, path, av.gameObject);
+            _exporter.ExportAvatar(_avatarNameProperty.stringValue, path, av.gameObject);
         }
 
         private void DrawBlendShapeList()
@@ -116,7 +120,7 @@ namespace Overte.Exporter.Avatar.Editor
 
             // Header with foldout and buttons
             EditorGUILayout.BeginHorizontal();
-            showBlendshapeList = EditorGUILayout.Foldout(showBlendshapeList, "Blend Shape Remapping", true,
+            _showBlendshapeList = EditorGUILayout.Foldout(_showBlendshapeList, "Blend Shape Remapping", true,
                 EditorStyles.foldoutHeader);
 
             GUILayout.FlexibleSpace();
@@ -128,14 +132,14 @@ namespace Overte.Exporter.Avatar.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            if (!showBlendshapeList)
+            if (!_showBlendshapeList)
                 return;
 
             // Scrollable area for blend shape mappings
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition,
-                GUILayout.Height(Mathf.Min(remapedBlendShapeListProperty.arraySize * 120f, 300f)));
+            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition,
+                GUILayout.Height(Mathf.Min(_remapedBlendShapeListProperty.arraySize * 120f, 300f)));
 
-            for (var i = 0; i < remapedBlendShapeListProperty.arraySize; i++)
+            for (var i = 0; i < _remapedBlendShapeListProperty.arraySize; i++)
             {
                 DrawBlendshapeElement(i);
             }
@@ -145,7 +149,7 @@ namespace Overte.Exporter.Avatar.Editor
 
         private void DrawBlendshapeElement(int index)
         {
-            var blendshapeElement = remapedBlendShapeListProperty.GetArrayElementAtIndex(index);
+            var blendshapeElement = _remapedBlendShapeListProperty.GetArrayElementAtIndex(index);
             var fromProperty = blendshapeElement.FindPropertyRelative("from");
             var toProperty = blendshapeElement.FindPropertyRelative("to");
             var multiplierProperty = blendshapeElement.FindPropertyRelative("multiplier");
@@ -174,7 +178,7 @@ namespace Overte.Exporter.Avatar.Editor
 
             if (GUILayout.Button("Select", GUILayout.Width(60)))
             {
-                BlendshapeSelectorWindow.ShowWindow(skinnedMeshRenderers, fromProperty, serializedObject);
+                BlendshapeSelectorWindow.ShowWindow(_skinnedMeshRenderers, fromProperty, serializedObject);
             }
 
             EditorGUILayout.EndHorizontal();
@@ -198,10 +202,10 @@ namespace Overte.Exporter.Avatar.Editor
 
         private void AddNewBlendshapeMapping()
         {
-            var index = remapedBlendShapeListProperty.arraySize;
-            remapedBlendShapeListProperty.arraySize++;
+            var index = _remapedBlendShapeListProperty.arraySize;
+            _remapedBlendShapeListProperty.arraySize++;
 
-            var newElement = remapedBlendShapeListProperty.GetArrayElementAtIndex(index);
+            var newElement = _remapedBlendShapeListProperty.GetArrayElementAtIndex(index);
             newElement.FindPropertyRelative("from").stringValue = "";
             newElement.FindPropertyRelative("to").stringValue = "";
             newElement.FindPropertyRelative("multiplier").floatValue = 1.0f;
@@ -211,7 +215,7 @@ namespace Overte.Exporter.Avatar.Editor
 
         private void RemoveBlendshapeMapping(int index)
         {
-            remapedBlendShapeListProperty.DeleteArrayElementAtIndex(index);
+            _remapedBlendShapeListProperty.DeleteArrayElementAtIndex(index);
             serializedObject.ApplyModifiedProperties();
         }
     }
